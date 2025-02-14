@@ -5,6 +5,9 @@ const router = express.Router();
 
 router.post('/login', userController.login);
 router.post('/signup', userController.signup);
+
+router.post('/logout', userController.logout); 
+
 router.get('/user/login', userController.getLoginForm);
 
 router.get('/user/signup' , userController.getSignupForm);
