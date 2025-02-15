@@ -5,34 +5,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expense Tracker</title>
+    <link rel="stylesheet" href="/css/expense.css">
 </head>
 
 <body>
-    <h2>Add Daily Expense</h2>
-    <button id="logout-btn">Logout</button>
+    <nav>
+        <h2>Expense Tracker</h2>
+        <div class="nav-buttons">
+            <button id="premium-btn">Buy Premium Membership</button>
+            <button id="logout-btn">Logout</button>
 
-    <form id="expense-form">
-        <label>Amount:</label>
-        <input type="number" id="amount" required><br><br>
+        </div>
+    </nav>
+    <div class="container">
+        <h2>Add Daily Expense</h2>
+        <form id="expense-form">
+            <label>Amount:</label>
+            <input type="number" id="amount" required><br><br>
 
-        <label>Description:</label>
-        <input type="text" id="description" required><br><br>
+            <label>Description:</label>
+            <input type="text" id="description" required><br><br>
 
-        <label>Category:</label>
-        <select id="category">
-            <option value="Food">Food</option>
-            <option value="Petrol">Petrol</option>
-            <option value="Salary">Salary</option>
-        </select><br><br>
+            <label>Category:</label>
+            <select id="category">
+                <option value="Food">Food</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Salary">Salary</option>
+                <option value="Rent">Rent</option>
+            </select><br><br>
 
-        <button type="submit">Add Expense</button>
-    </form>
+            <button type="submit">Add Expense</button>
+        </form>
+    </div>
+
 
     <h2>Expense List</h2>
     <ul id="expense-list"></ul>
 
     <script>
-        // ✅ Handle adding expenses
         document.getElementById('expense-form').addEventListener('submit', async function (event) {
             event.preventDefault();
             const amount = document.getElementById('amount').value;
@@ -46,27 +56,45 @@
             });
 
             if (response.ok) {
-                loadExpenses(); // Reload expenses after adding
+                loadExpenses();
             } else {
                 alert('Failed to add expense');
             }
         });
 
-        // ✅ Load all expenses
         async function loadExpenses() {
             const response = await fetch('/expense/list');
             const expenses = await response.json();
             const expenseList = document.getElementById('expense-list');
             expenseList.innerHTML = '';
+
+            let totalDebits = 0;
+
             expenses.forEach(expense => {
                 const li = document.createElement('li');
                 li.innerHTML = `
-                    ${expense.amount} - ${expense.description} (${expense.category})
-                    <button onclick="deleteExpense(${expense.id})">Delete</button>
-                `;
+           Rs.${expense.amount} - ${expense.description} - ${expense.category}
+            <button onclick="deleteExpense(${expense.id})">Delete</button>
+        `;
                 expenseList.appendChild(li);
+
+                // ✅ Only count debits (excluding "Salary")
+                if (expense.category !== "Salary") {
+                    totalDebits += parseFloat(expense.amount);
+                }
             });
+
+            // ✅ Display total debits
+            let totalDebitsElement = document.getElementById('total-debits');
+            if (!totalDebitsElement) {
+                totalDebitsElement = document.createElement('h3');
+                totalDebitsElement.id = 'total-debits';
+                document.body.appendChild(totalDebitsElement);
+            }
+            totalDebitsElement.innerText = `Total Debits: Rs.${totalDebits}`;
         }
+
+
 
         async function deleteExpense(expenseId) {
             console.log(`🗑️ Attempting to delete expense with ID: ${expenseId}`);
@@ -90,6 +118,12 @@
                 alert('Failed to logout');
             }
         });
+
+        document.getElementById('premium-btn').addEventListener('click', () => {
+            window.location.href = 'http://localhost:3000/payment/pay';
+        });
+
+
         window.onload = loadExpenses;
     </script>
 </body>

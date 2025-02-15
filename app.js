@@ -7,6 +7,8 @@ const path = require('path');
 const sequelize = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
+const paymentRoutes = require('./routes/payment'); // Adjust path if needed
+
 
 const app = express();
 
@@ -23,6 +25,8 @@ const sessionStore = new MySQLStore({
 
 // Middleware
 app.use(bodyParser.json());
+app.use(express.static('public'));
+
 app.use(express.static(path.join(__dirname, 'views')));
 
 app.use(session({
@@ -38,6 +42,7 @@ app.use(session({
 }));
 
 app.use(userRoutes);
+app.use('/payment', paymentRoutes);
 app.use('/expense', expenseRoutes);
 
 app.get('/check-session', (req, res) => {
