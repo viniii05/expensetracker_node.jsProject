@@ -5,91 +5,50 @@ const Order = require('../models/Order');
 const User = require('../models/User'); // Ensure User model exists
 require('dotenv').config(); // Load environment variables
 const path = require('path');
+const {createorder, getPaymentStatus} = require('../services/cashFreeService.js');
 
-router.get('/pay', (req, res) => {
-      res.sendFile(path.join(__dirname, '../views/paynow.html'));
-})
-
-router.post('/create-order', async (req, res) => {
+router.post('/pay', async (req, res) => {
     try {
-        const { userId } = req.body;
-        console.log("Received userId:", userId); // Debugging
+        const orderId = `order_${Date.now()}`;
+        const orderAmount = 100; // Example amount (change as needed)
+        const customerId = "customer_123"; // Replace with actual user ID
+        const customerPhone = "9999999999"; // Replace with actual phone number
 
-        const order = await Order.create({
-            userId,
-            orderId: `ORDER_${Date.now()}`,
-            amount: 100,
-            status: 'PENDING'
-        });
+        const paymentSessionId = await createorder(orderId, orderAmount, "INR", customerId, customerPhone);
 
-        console.log("Order created:", order);
+        if (!paymentSessionId) {
+            return res.status(500).json({ error: "Failed to create payment session" });
+        }
 
-        const postData = JSON.stringify({
-            order_id: order.orderId,
-            order_amount: order.amount,
-            order_currency: "INR",
-            customer_details: {
-                customer_id: userId,
-                customer_email: "user@example.com",
-                customer_phone: "9999999999"
-            }
-        });
-
-        const options = {
-            hostname: 'sandbox.cashfree.com',
-            path: '/pg/orders',
-            method: 'POST',
-            headers: {
-                'x-client-id': process.env.CASHFREE_APP_ID,
-                'x-client-secret': process.env.CASHFREE_SECRET_KEY,
-                'x-api-version': '2025-01-01', // ✅ Add this line
-
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData)
-            }
-        };
-
-        console.log("Sending request to Cashfree...");
-
-        const request = https.request(options, (response) => {
-            let data = '';
-
-            response.on('data', (chunk) => {
-                data += chunk;
-            });
-
-            response.on('end', () => {
-                console.log("Raw response from Cashfree:", data);
-                try {
-                    const cashfreeResponse = JSON.parse(data);
-                    console.log("Parsed Cashfree Response:", cashfreeResponse);
-
-                    if (cashfreeResponse.payment_link) {
-                        res.json({ paymentLink: cashfreeResponse.payment_link });
-                    } else {
-                        res.status(500).json({ error: 'Failed to get payment link' });
-                    }
-                } catch (err) {
-                    console.error('Error parsing response:', err);
-                    res.status(500).json({ error: 'Invalid response from Cashfree' });
-                }
-            });
-        });
-
-        request.on('error', (err) => {
-            console.error('Request error:', err);
-            res.status(500).json({ error: 'Payment initiation failed' });
-        });
-
-        request.write(postData);
-        request.end();
-
+        res.json({ paymentSessionId });
     } catch (error) {
-        console.error("Error in create-order:", error);
-        res.status(500).json({ error: 'Failed to create order' });
-    }
-});
+        console.error("Payment initiation error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }});
 
+    router.post('/create-order', async (req, res) => {
+        try {
+            const { userId } = req.body;
+            if (!userId) return res.status(400).json({ error: "User ID is required" });
+    
+            console.log("Creating order with userId:", userId);
+    
+            const order = await Order.create({
+                userId,
+                orderId: `ORDER_${Date.now()}`,
+                amount: 100,
+                status: 'PENDING'
+            });
+    
+            console.log("Order Created:", order.toJSON());
+    
+            res.json({ success: true, order });
+    
+        } catch (error) {
+            console.error("Error while creating order:", error);
+            res.status(500).json({ error: "Failed to create order" });
+        }
+    });
 
 
 router.post('/update-status', async (req, res) => {
@@ -105,7 +64,7 @@ router.post('/update-status', async (req, res) => {
         if (status === 'SUCCESSFUL') {
             const user = await User.findByPk(order.userId);
             if (user) {
-                user.isPremium = true;
+                user.isPremiumUserUser = true;
                 await user.save();
             }
         }
@@ -114,6 +73,70 @@ router.post('/update-status', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to update order status' });
+    }
+});
+
+router.get("/verify-payment", async (req, res) => {
+    try {
+        const { orderId } = req.query;
+
+        if (!orderId) {
+            return res.status(400).json({ message: "Order ID is required" });
+        }
+
+        const paymentStatus = await getPaymentStatus(orderId);
+        
+        if (paymentStatus === "Success") {
+            await Order.update({ status: "SUCCESSFUL" }, { where: { orderId } });
+
+            const order = await Order.findOne({ where: { orderId } });
+            if (order) {
+                await User.update({ isPremiumUser: true }, { where: { id: order.userId } });
+            }
+
+            return res.json({ message: "Payment successful", status: "SUCCESS" });
+        } else {
+            return res.json({ message: "Payment failed", status: paymentStatus });
+        }
+
+    } catch (error) {
+        console.error("Error verifying payment:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
+router.get("/payment-status/:orderId", async (req, res) => {
+    try {
+        const orderId = req.params.orderId;
+        console.log("Checking payment status for:", orderId);
+        
+        // Fetch order details from DB
+        const order = await Order.findOne({ where: { orderId } });
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        res.json({ status: order.status });
+    } catch (error) {
+        console.error("Error fetching payment status:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+
+// routes/payment.js
+router.post("/payment-success", async (req, res) => {
+    try {
+        const { userId, orderId } = req.body;
+
+        // Mark the user as a premium member
+        await User.update({ isPremiumUser: true }, { where: { id: userId } });
+
+        res.json({ success: true, message: "User upgraded to premium." });
+    } catch (error) {
+        console.error("Error updating user status:", error);
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 

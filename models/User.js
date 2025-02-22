@@ -1,5 +1,6 @@
+// models/User.js
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); 
+const sequelize = require('../config/database');
 
 const User = sequelize.define('User', {
   id: {
@@ -20,9 +21,17 @@ const User = sequelize.define('User', {
   password: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  totalExpenses: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+  },
+  isPremiumUser: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
-  timestamps: false 
+  timestamps: false
 });
 
 module.exports = User;

@@ -5,34 +5,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link rel="stylesheet" href="/css/login.css">
 </head>
 
 <body>
-    <form id="loginForm">
-        <input type="email" id="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" id="password" placeholder="Password" required>
-        <button type="submit">Login</button>
-        <a href="/user/signup">Signup</a>
-    </form>
-
-    <p id="error-message" style="color: red;"></p>
+    <div class="container">
+        <div class="text-section">
+            <h1> Welcome Back! Manage Your Finances with Ease. </h1>
+            <h3> Track expenses, stay on budget, and gain financial clarity—all in one place.</h3>
+        </div>
+        
+        <form id="loginForm">
+            <input type="email" id="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" id="password" placeholder="Password" required>
+            <button type="submit">Let’s Go!</button>
+            <p class="span">First time here?<a href="/user/signup"> Sign up </a> and start tracking!</p>
+        </form>
+        <p id="error-message" style="color: red;"></p>
+    </div>
 
     <script>
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-        
+
             try {
                 const response = await fetch('http://localhost:3000/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-        
+
                 const data = await response.json();
-        
+
                 if (response.ok) {
                     window.location.href = data.redirect; // Redirect user to "/"
                 } else {
@@ -42,8 +49,8 @@
                 document.getElementById('error-message').innerText = 'Error connecting to the server';
             }
         });
-        </script>
-        
+    </script>
+
 </body>
 
 </html>

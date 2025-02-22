@@ -8,6 +8,7 @@ const sequelize = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const paymentRoutes = require('./routes/payment'); // Adjust path if needed
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 
 const app = express();
@@ -41,9 +42,14 @@ app.use(session({
     }
 }));
 
+
+
+
 app.use(userRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/expense', expenseRoutes);
+app.use(leaderboardRoutes);
+
 
 app.get('/check-session', (req, res) => {
     if (req.session.userId) {

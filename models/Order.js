@@ -13,7 +13,8 @@ const Order = sequelize.define('Order', {
     },
     orderId: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        unique: true // ✅ Prevent duplicate order IDs
     },
     amount: {
         type: DataTypes.FLOAT,
@@ -23,8 +24,6 @@ const Order = sequelize.define('Order', {
         type: DataTypes.ENUM('PENDING', 'SUCCESSFUL', 'FAILED'),
         defaultValue: 'PENDING'
     }
-}, { 
-    timestamps: false // ✅ Disable createdAt and updatedAt
-});
+}, { timestamps: true }); // ✅ Enable timestamps (createdAt, updatedAt)
 
 module.exports = Order;

@@ -1,12 +1,10 @@
 const express = require('express');
+const expenseController = require('../controllers/expenseController'); // ✅ Make sure this path is correct
+
 const router = express.Router();
-const expenseController = require('../controllers/expenseController');
 
-const isAuthenticated = expenseController.isAuthenticated;
-
-router.post('/add', isAuthenticated, expenseController.addExpense);
-router.delete('/delete/:id', isAuthenticated, expenseController.deleteExpense);
-router.get('/list', isAuthenticated, expenseController.getExpenses);
-
+router.post('/add', expenseController.addExpense); // ✅ Ensure this function is correctly imported
+router.get('/list', expenseController.getExpenses);
+router.delete('/delete/:id', expenseController.deleteExpense);
 
 module.exports = router;

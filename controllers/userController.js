@@ -1,5 +1,4 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const path = require('path');
 
@@ -36,13 +35,17 @@ exports.login = async (req, res) => {
       const { email, password } = req.body;
       const user = await User.findOne({ where: { email } });
 
-      if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+    }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
 
       req.session.userId = user.id;
       req.session.userName = user.name;
+      console.log("User logged in, session userId:", req.session.userId);
+
 
       res.status(200).json({ redirect: '/' });
   } catch (error) {
@@ -59,4 +62,14 @@ exports.logout = (req, res) => {
   });
 };
 
+exports.getUserStatus = async (req, res) => {
+  try {
+      const user = await User.findByPk(req.user.id);
+
+      res.json({ isPremiumUser: user.isPremiumUser });
+  } catch (error) {
+      console.error('Error fetching user status:', error);
+      res.status(500).json({ message: 'Failed to fetch user status' });
+  }
+};
 
