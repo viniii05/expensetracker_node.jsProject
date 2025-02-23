@@ -16,8 +16,7 @@ router.get('/user/login', userController.getLoginForm);
 
 router.get('/user/signup' , userController.getSignupForm);
 
-router.get('/status', isAuthenticated, userController.getUserStatus);
-
+router.get("/status", userController.getUserStatus);
 router.get('/check-premium', async (req, res) => {
     try {
         if (!req.session.userId) {

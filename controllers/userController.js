@@ -62,14 +62,20 @@ exports.logout = (req, res) => {
   });
 };
 
-exports.getUserStatus = async (req, res) => {
-  try {
-      const user = await User.findByPk(req.user.id);
 
-      res.json({ isPremiumUser: user.isPremiumUser });
-  } catch (error) {
-      console.error('Error fetching user status:', error);
-      res.status(500).json({ message: 'Failed to fetch user status' });
-  }
+
+exports.getUserStatus = async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ error: "Not logged in" });
+    }
+
+    const user = await User.findByPk(req.session.userId);
+
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ isPremiumUser: user.isPremiumUser });
 };
+
 

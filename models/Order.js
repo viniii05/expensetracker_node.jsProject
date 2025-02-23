@@ -24,6 +24,6 @@ const Order = sequelize.define('Order', {
         type: DataTypes.ENUM('PENDING', 'SUCCESSFUL', 'FAILED'),
         defaultValue: 'PENDING'
     }
-}, { timestamps: true }); // ✅ Enable timestamps (createdAt, updatedAt)
+}, { timestamps: false }); // ✅ Enable timestamps (createdAt, updatedAt)
 
 module.exports = Order;

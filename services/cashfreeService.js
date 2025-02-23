@@ -11,6 +11,7 @@ export const createorder = async (
     orderId, orderAmount, orderCurrency, customerId, customerPhone
 ) => {
     try {
+        console.log("PIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
         const expiryDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
         
         const request = {
@@ -63,7 +64,7 @@ export const getPaymentStatus = async (orderId, userId) => {
         const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
         let getOrderResponse = response.data;
         let orderStatus;
-
+            console.log("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
         if (getOrderResponse.some(transaction => transaction.payment_status === "SUCCESS")) {
             orderStatus = "Success";
 

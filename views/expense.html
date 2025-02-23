@@ -13,7 +13,7 @@
     <nav>
         <h2>Expense Tracker</h2>
         <div class="nav-buttons">
-            <h1 id="premiumMessage" style="display: none; color: gold;">You are a premium user now</h1>
+            <h1 id="premiumMessage" style="display: none; color: rgb(20, 19, 19);">You are a premium user now</h1>
             <button id="premium-btn">Buy Premium Membership</button>
             <button id="logout-btn">Logout</button>
         </div>
@@ -41,13 +41,21 @@
     </div>
 
     <h2>Expense List</h2>
-    <ul id="expense-list"></ul>
+    <table>
+        <thead>
+            <tr>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="expense-table-body"></tbody>
+    </table>
 
-    <!-- Total Expense -->
     <h3 id="total-debits">Total Debits: Rs.0</h3>
-
-    <!-- Leaderboard (moved here) -->
-    <ul id="leaderboard-list"></ul>
+    <button id="show-leaderboard-btn">Show Leaderboard</button>
+<ul id="leaderboard-list" style="display: none;"></ul>
 
     <script>
         const cashfree = Cashfree({ mode: "sandbox" });
@@ -74,18 +82,20 @@
         async function loadExpenses() {
             const response = await fetch('/expense/list');
             const expenses = await response.json();
-            const expenseList = document.getElementById('expense-list');
-            expenseList.innerHTML = '';
+            const tableBody = document.getElementById('expense-table-body');
+            tableBody.innerHTML = '';
 
             let totalDebits = 0;
 
             expenses.forEach(expense => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    Rs.${expense.amount} - ${expense.description} - ${expense.category}
-                    <button onclick="deleteExpense(${expense.id})">Delete</button>
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>Rs.${expense.amount}</td>
+                    <td>${expense.description}</td>
+                    <td>${expense.category}</td>
+                    <td><button onclick="deleteExpense(${expense.id})">Delete</button></td>
                 `;
-                expenseList.appendChild(li);
+                tableBody.appendChild(row);
 
                 if (expense.category !== "Salary") {
                     totalDebits += parseFloat(expense.amount);
@@ -93,18 +103,18 @@
             });
 
             document.getElementById('total-debits').innerText = `Total Debits: Rs.${totalDebits}`;
-            loadLeaderboard(); // Ensure leaderboard updates when expenses change
+            loadLeaderboard();
         }
 
         async function deleteExpense(expenseId) {
             const response = await fetch(`/expense/delete/${expenseId}`, { method: 'DELETE' });
-
             if (response.ok) {
                 loadExpenses();
             } else {
                 alert('Failed to delete expense');
             }
         }
+
 
         document.getElementById('logout-btn').addEventListener('click', async function () {
             const response = await fetch('/logout', { method: 'POST' });
@@ -149,22 +159,69 @@
             }
         });
 
-        async function checkPremiumStatus() {
+        async function checkPaymentStatus(orderId) {
     try {
-        const response = await fetch('/check-premium'); // API call
+        const response = await fetch(`/payment/verify-payment?orderId=${orderId}`);
         const data = await response.json();
-
-        if (data.loggedIn && data.isPremiumUser) {
-            document.getElementById('premium-btn').style.display = 'none';
-            document.getElementById('premiumMessage').style.display = 'block';
+        
+        if (data.status === "SUCCESS") {
+            alert("Payment Successful! You are now a premium user.");
+            window.location.reload();
         } else {
-            document.getElementById('premium-btn').style.display = 'block';
-            document.getElementById('premiumMessage').style.display = 'none';
+            alert("Payment Failed or Pending.");
         }
     } catch (error) {
-        console.error('Error checking premium status:', error);
+        console.error("Error verifying payment:", error);
     }
 }
+
+async function checkPremiumStatus() {
+    try {
+        const response = await fetch('/check-premium'); // Change this endpoint based on your backend
+        const data = await response.json();
+
+        if (data.isPremiumUser) {
+            document.getElementById('premiumMessage').style.display = 'block';
+            document.getElementById('premium-btn').style.display = 'none';
+        }
+    } catch (error) {
+        console.error("Error checking premium status:", error);
+    }
+}
+
+document.getElementById('show-leaderboard-btn').addEventListener('click', async function () {
+    const leaderboardList = document.getElementById('leaderboard-list');
+
+    if (leaderboardList.style.display === 'none' || leaderboardList.style.display === '') {
+        await loadLeaderboard();  // Load leaderboard data
+        leaderboardList.style.display = 'block';
+        this.textContent = "Hide Leaderboard"; // Change button text
+    } else {
+        leaderboardList.style.display = 'none';
+        this.textContent = "Show Leaderboard"; // Reset button text
+    }
+});
+
+async function loadLeaderboard() {
+    try {
+        const response = await fetch('/leaderboard');
+        const data = await response.json();
+        const leaderboardList = document.getElementById('leaderboard-list');
+        leaderboardList.innerHTML = '';
+
+        data.forEach(user => {
+            const totalExpenses = user.totalExpenses !== undefined ? user.totalExpenses : 0;
+            const li = document.createElement('li');
+            li.textContent = `${user.name} - Rs.${totalExpenses}`;
+            leaderboardList.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Error loading leaderboard:", error);
+    }
+}
+ 
+
+
 
 // ✅ Call it when the page loads
 window.onload = () => {
