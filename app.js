@@ -10,10 +10,8 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const paymentRoutes = require('./routes/payment'); // Adjust path if needed
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
-
 const app = express();
 
-// Session Store in MySQL
 const sessionStore = new MySQLStore({
   host: 'localhost',
   user: 'root',
@@ -24,7 +22,6 @@ const sessionStore = new MySQLStore({
     expiration: 86400000 // 1-day session expiration
 });
 
-// Middleware
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
@@ -37,13 +34,10 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 86400000, // 1 day
+        maxAge: 86400000,
         httpOnly: true
     }
 }));
-
-
-
 
 app.use(userRoutes);
 app.use('/payment', paymentRoutes);

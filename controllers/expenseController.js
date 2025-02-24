@@ -4,9 +4,7 @@ const User = require('../models/User');
 exports.addExpense = async (req, res) => {
     try {
         const { amount, description, category } = req.body;
-        const userId = req.session.userId; // Get user ID from session
-
-
+        const userId = req.session.userId;
         await Expense.create({
             amount,
             description,
@@ -42,8 +40,7 @@ exports.getExpenses = async (req, res) => {
 exports.deleteExpense = async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.session.userId; // Get user ID from session
-
+        const userId = req.session.userId;
 
         const expense = await Expense.findOne({ where: { id, user_id: req.session.userId } });
 
@@ -52,7 +49,7 @@ exports.deleteExpense = async (req, res) => {
         }
 
         await User.increment('totalExpenses', { 
-            by: -parseFloat(expense.amount), // Subtracting
+            by: -parseFloat(expense.amount),
             where: { id: userId } 
         });
 

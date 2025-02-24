@@ -8,13 +8,11 @@
 </head>
 <body>
     <div class="container">
-        <!-- Left Section with Welcome Text -->
         <div class="text-section">
             <h1>Join Us & Take Control of Your Finances!</h1>
             <h3>Track expenses, save more, and achieve financial freedom effortlessly.</h3>
         </div>
 
-        <!-- Right Section with Sign Up Form -->
         <form id="signupForm">
             <h2>Create Your Account</h2>
             <input type="text" id="name" placeholder="Full Name" required />
@@ -45,9 +43,9 @@
 
         const data = await response.json();
 
-        if (response.ok) {  // ✅ FIX: Checks if status is 200-299
+        if (response.ok) {
             alert(data.message || 'User signed up successfully!');
-            window.location.href = '/';  // Redirect to home
+            window.location.href = '/';
         } else {
             document.getElementById('error-message').innerText = data.error || 'Something went wrong';
         }

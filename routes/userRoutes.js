@@ -3,8 +3,6 @@ const userController = require('../controllers/userController');
 const isAuthenticated = require('../middleware/authMiddleware');
 const User = require('../models/User');
 
-
-
 const router = express.Router();
 
 router.post('/login', userController.login);
@@ -16,7 +14,6 @@ router.get('/user/login', userController.getLoginForm);
 
 router.get('/user/signup' , userController.getSignupForm);
 
-router.get("/status", userController.getUserStatus);
 router.get('/check-premium', async (req, res) => {
     try {
         if (!req.session.userId) {

@@ -11,7 +11,6 @@ export const createorder = async (
     orderId, orderAmount, orderCurrency, customerId, customerPhone
 ) => {
     try {
-        console.log("PIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
         const expiryDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
         
         const request = {
@@ -19,7 +18,7 @@ export const createorder = async (
             order_currency: orderCurrency || "INR",
             order_id: orderId,
             customer_details: { customer_id: customerId, customer_phone: customerPhone },
-            order_meta: { return_url: `http://localhost:3000/payment-status/${orderId}`, payment_methods: "cc, dc, upi" },
+            order_meta: { return_url: `http://localhost:3000/payment/verify-payment?orderId=${orderId}`, payment_methods: "cc, dc, upi" },
             order_expiry_time: expiryDate,
         };
 
@@ -36,39 +35,14 @@ export const createorder = async (
     }
 };
 
-// export const getPaymentStatus = async (orderId) => {
-//     try{
-//         const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
-
-//         let getOrderResponse = response.data;
-//         let orderStatus;
-
-//         if(
-//             getOrderResponse.filter(
-//                 (transaction) => transaction.payment_status === "SUCCESS"
-//             ).length > 0
-//         ){
-//             orderStatus = "Success";
-//         }else if (getOrderResponse.filter ((transaction) => transaction.payment_status === "PENDING").length > 0){
-//             orderStatus = "Pending";
-//         } else {
-//             orderStatus = "Failure";
-//         }
-//         return orderStatus;
-//     } catch (err) {
-//         console.log("erroe fetching order Ststus", err.message);
-//     }
-// }
 export const getPaymentStatus = async (orderId, userId) => {
     try {
         const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
         let getOrderResponse = response.data;
         let orderStatus;
-            console.log("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
         if (getOrderResponse.some(transaction => transaction.payment_status === "SUCCESS")) {
             orderStatus = "Success";
 
-            // ✅ Update user as premium
             await User.update({ isPremium: true }, { where: { id: userId } });
 
         } else if (getOrderResponse.some(transaction => transaction.payment_status === "PENDING")) {

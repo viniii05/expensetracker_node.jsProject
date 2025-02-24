@@ -1,9 +1,9 @@
 const express = require('express');
-const expenseController = require('../controllers/expenseController'); // ✅ Make sure this path is correct
+const expenseController = require('../controllers/expenseController');
 
 const router = express.Router();
 
-router.post('/add', expenseController.addExpense); // ✅ Ensure this function is correctly imported
+router.post('/add', expenseController.addExpense); 
 router.get('/list', expenseController.getExpenses);
 router.delete('/delete/:id', expenseController.deleteExpense);
 
