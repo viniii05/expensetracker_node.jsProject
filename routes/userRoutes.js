@@ -16,6 +16,7 @@ router.get('/user/login', userController.getLoginForm);
 router.get('/user/signup' , userController.getSignupForm);
 
 router.get('/password/reset', userController.getResetPassword);
+
 router.get('/check-premium', async (req, res) => {
     try {
         if (!req.session.userId) {
@@ -30,6 +31,15 @@ router.get('/check-premium', async (req, res) => {
         res.status(500).json({ message: 'Error checking premium status' });
     }
 });
+
+
+
+
+router.get('/password/reset-password/:id', userController.getResetPassword );
+
+router.post('/password/resetpassword/:id', userController.resetPassword);
+
+
 
 
 module.exports = router;
