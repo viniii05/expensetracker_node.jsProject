@@ -1,23 +1,32 @@
+const sequelize = require('../config/database'); 
 const Expense = require('../models/Expense');
 const User = require('../models/User');
 
 exports.addExpense = async (req, res) => {
+    let trans; 
     try {
         const { amount, description, category } = req.body;
         const userId = req.session.userId;
+
+        trans = await sequelize.transaction();
+
         await Expense.create({
             amount,
             description,
             category,
-            user_id: req.session.userId
-        });
+            user_id: userId
+        }, { transaction: trans });
+
         await User.increment('totalExpenses', { 
             by: parseFloat(amount), 
-            where: { id: userId } 
+            where: { id: userId }, 
+            transaction: trans
         });
 
+        await trans.commit();
         res.status(201).json({ message: 'Expense added successfully' });
     } catch (error) {
+        if (trans) await trans.rollback();
         console.error('Error adding expense:', error);
         res.status(500).json({ message: 'Error adding expense' });
     }
@@ -38,25 +47,37 @@ exports.getExpenses = async (req, res) => {
 };
 
 exports.deleteExpense = async (req, res) => {
+    let trans;
     try {
         const { id } = req.params;
         const userId = req.session.userId;
 
-        const expense = await Expense.findOne({ where: { id, user_id: req.session.userId } });
+        trans = await sequelize.transaction();
+
+        const expense = await Expense.findOne({ 
+            where: { id, user_id: userId },
+            transaction: trans 
+        });
 
         if (!expense) {
+            await trans.rollback();
             return res.status(404).json({ message: 'Expense not found' });
         }
 
         await User.increment('totalExpenses', { 
             by: -parseFloat(expense.amount),
-            where: { id: userId } 
+            where: { id: userId },
+            transaction: trans 
         });
 
-        await expense.destroy();
+        await expense.destroy({ transaction: trans });
+
+        await trans.commit(); 
         res.json({ message: 'Expense deleted successfully' });
     } catch (error) {
+        if (trans) await trans.rollback();
         console.error('Error deleting expense:', error);
         res.status(500).json({ message: 'Error deleting expense' });
     }
 };
+
