@@ -9,11 +9,13 @@ router.post('/login', userController.login);
 router.post('/signup', userController.signup);
 
 router.post('/logout', userController.logout); 
+router.post('/password/forgotpassword', userController.forgotPassword);
 
 router.get('/user/login', userController.getLoginForm);
 
 router.get('/user/signup' , userController.getSignupForm);
 
+router.get('/password/reset', userController.getResetPassword);
 router.get('/check-premium', async (req, res) => {
     try {
         if (!req.session.userId) {

@@ -14,13 +14,19 @@
             <h1> Welcome Back! Manage Your Finances with Ease. </h1>
             <h3> Track expenses, stay on budget, and gain financial clarity—all in one place.</h3>
         </div>
-        
+
         <form id="loginForm">
             <input type="email" id="email" name="email" placeholder="Email" required>
             <input type="password" name="password" id="password" placeholder="Password" required>
-            <button type="submit">Let’s Go!</button>
-            <p class="span">First time here?<a href="/user/signup"> Sign up </a> and start tracking!</p>
+
+            <button type="submit" id="btn">Let’s Go!</button>
+
+            <!-- Forgot Password Link (Fixed Button Structure) -->
+            <a href="/password/reset" id="btn">Forgot Password?</a>
+
+            <p class="span">First time here? <a href="/user/signup"> Sign up </a> and start tracking!</p>
         </form>
+
         <p id="error-message" style="color: red;"></p>
     </div>
 
