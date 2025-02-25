@@ -5,7 +5,7 @@ const User = require('../models/User');
 exports.addExpense = async (req, res) => {
     let trans; 
     try {
-        const { amount, description, category } = req.body;
+        const { amount, description, category , expense_date } = req.body;
         const userId = req.session.userId;
 
         trans = await sequelize.transaction();
@@ -14,6 +14,7 @@ exports.addExpense = async (req, res) => {
             amount,
             description,
             category,
+            expense_date: expense_date || new Date(),
             user_id: userId
         }, { transaction: trans });
 

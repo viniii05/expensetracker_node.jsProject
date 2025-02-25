@@ -32,14 +32,11 @@ router.get('/check-premium', async (req, res) => {
     }
 });
 
-
-
-
 router.get('/password/reset-password/:id', userController.getResetPassword );
 
 router.post('/password/resetpassword/:id', userController.resetPassword);
 
-
+router.get('/user/premium' , userController.getPremiumActions);
 
 
 module.exports = router;

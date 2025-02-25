@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Dashboard</title>
+    <link rel="stylesheet" href="/css/premium.css">
+</head>
+
+<body>
+    <nav>
+        <h2>Expense Tracker</h2>
+        <!-- <h1><a href="/user/premium">Premium Dashboard</a></h1> -->
+        <div class="nav-buttons">
+            <h1 id="premiumMessage" style="display: none; color: rgb(20, 19, 19);">You are a premium user now</h1>
+            <button id="premium-btn">Buy Premium Membership</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Premium Dashboard</h1>
+        <p>Track your expenses and incomes easily.</p>
+
+        <label for="filter-dropdown">Filter By:</label>
+        <select id="filter-dropdown">
+            <option value="all">All</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+        </select>
+
+        <table id="transactions">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <button id="download-btn" disabled>Download Report</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/check-premium');
+                const data = await response.json();
+
+                if (data.isPremiumUser) {
+                    document.getElementById('premiumMessage').style.display = 'block';
+                    document.getElementById('premium-btn').style.display = 'none';
+                    document.getElementById('show-leaderboard-btn').style.display = 'block';
+                } else {
+                    document.getElementById('show-leaderboard-btn').style.display = 'none';  
+                }
+            } catch (error) {
+                console.error("Error checking premium status:", error);
+            }
+
+            loadTransactions(); 
+        });
+
+        document.getElementById('filter-dropdown').addEventListener('change', function () {
+            loadTransactions(this.value); 
+        });
+
+        async function loadTransactions(filter = "all") {
+            console.log(`Fetching transactions with filter: ${filter}`);
+        }
+    </script>
+</body>
+
+</html>

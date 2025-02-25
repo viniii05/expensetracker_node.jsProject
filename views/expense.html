@@ -12,6 +12,7 @@
 <body>
     <nav>
         <h2>Expense Tracker</h2>
+        <h1><a href="/user/premium">Premium Dashboard</a></h1>
         <div class="nav-buttons">
             <h1 id="premiumMessage" style="display: none; color: rgb(20, 19, 19);">You are a premium user now</h1>
             <button id="premium-btn">Buy Premium Membership</button>
@@ -36,6 +37,9 @@
                 <option value="Rent">Rent</option>
             </select><br><br>
 
+            <label>Date:</label>
+            <input type="date" id="expense-date" required><br><br>
+
             <button type="submit">Add Expense</button>
         </form>
     </div>
@@ -44,6 +48,7 @@
     <table>
         <thead>
             <tr>
+                <th>Date</th>
                 <th>Amount</th>
                 <th>Description</th>
                 <th>Category</th>
@@ -65,11 +70,12 @@
             const amount = document.getElementById('amount').value;
             const description = document.getElementById('description').value;
             const category = document.getElementById('category').value;
+            const expenseDate = document.getElementById('expense-date').value;
 
             const response = await fetch('/expense/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount, description, category })
+                body: JSON.stringify({ amount, description, category, expense_date: expenseDate })
             });
 
             if (response.ok) {
@@ -89,7 +95,9 @@
 
             expenses.forEach(expense => {
                 const row = document.createElement('tr');
-                row.innerHTML = `
+                row.innerHTML =
+                    `   
+                    <td>${expense.expense_date}</td> <!-- Show date -->
                     <td>Rs.${expense.amount}</td>
                     <td>${expense.description}</td>
                     <td>${expense.category}</td>
@@ -97,7 +105,7 @@
                 `;
                 tableBody.appendChild(row);
 
-                    totalDebits += parseFloat(expense.amount);
+                totalDebits += parseFloat(expense.amount);
             });
 
             document.getElementById('total-debits').innerText = `Total Debits: Rs.${totalDebits}`;
@@ -154,8 +162,8 @@
                 button.disabled = false;
                 button.innerText = "Buy Premium Membership";
             }
-        });       
-        
+        });
+
         async function checkPaymentStatus(orderId) {
             try {
                 const response = await fetch(`/payment/verify-payment/${orderId}`);
@@ -180,10 +188,10 @@
                 if (data.isPremiumUser) {
                     document.getElementById('premiumMessage').style.display = 'block';
                     document.getElementById('premium-btn').style.display = 'none';
-                    document.getElementById('show-leaderboard-btn').style.display = 'block';  
+                    document.getElementById('show-leaderboard-btn').style.display = 'block';
                 } else {
-            document.getElementById('show-leaderboard-btn').style.display = 'none';  // Hide leaderboard button
-        }
+                    document.getElementById('show-leaderboard-btn').style.display = 'none';  
+                }
             } catch (error) {
                 console.error("Error checking premium status:", error);
             }

@@ -7,9 +7,6 @@ const ForgotPasswordRequest = require('../models/forgotPasswordRequest');
 const Sib = require('sib-api-v3-sdk');
 require('dotenv').config();
 
-
-require('dotenv').config();
-
 exports.getLoginForm = (req, res) => {
   res.sendFile(path.join(__dirname, '../views/login.html'));
 };
@@ -159,3 +156,6 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+exports.getPremiumActions = (req,res) => {
+  res.sendFile(path.join(__dirname,'../' ,'views' , 'premium.html'));
+}

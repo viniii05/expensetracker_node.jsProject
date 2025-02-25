@@ -23,6 +23,10 @@ const Expense = sequelize.define('Expense', {
     user_id: { 
         type: DataTypes.INTEGER,
         allowNull: false,
+    },
+    expense_date: {
+        type: DataTypes.DATE,
+        allowNull: false,
     }
 }, {
     tableName: 'expenses', 
