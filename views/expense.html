@@ -12,7 +12,7 @@
 <body>
     <nav>
         <h2>Expense Tracker</h2>
-        <h1><a href="/user/premium">Premium Dashboard</a></h1>
+        <h1 id="premiumDashboard" style="display: none;"><a href="/user/premium">Premium Dashboard</a></h1>
         <div class="nav-buttons">
             <h1 id="premiumMessage" style="display: none; color: rgb(20, 19, 19);">You are a premium user now</h1>
             <button id="premium-btn">Buy Premium Membership</button>
@@ -45,6 +45,19 @@
     </div>
 
     <h2>Expense List</h2>
+    
+    <div class="items-per-page-container">
+        <label for="items-per-page">Expenses per page:</label>
+        <select id="items-per-page">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="40">40</option>
+        </select>
+    </div>
+    
+
     <table>
         <thead>
             <tr>
@@ -70,7 +83,15 @@
         const cashfree = Cashfree({ mode: "sandbox" });
         let expenses = [];
         let currentPage = 1;
-        const itemsPerPage = 10;
+        let itemsPerPage = localStorage.getItem('itemsPerPage') ? parseInt(localStorage.getItem('itemsPerPage')) : 10;
+        
+        document.getElementById('items-per-page').value = itemsPerPage;
+        document.getElementById('items-per-page').addEventListener('change', function () {
+            itemsPerPage = parseInt(this.value);
+            localStorage.setItem('itemsPerPage', itemsPerPage);
+            currentPage = 1;
+            renderTable();
+        });
 
         document.getElementById('expense-form').addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -92,39 +113,12 @@
             }
         });
 
-        // async function loadExpenses() {
-        //     const response = await fetch('/expense/list');
-        //     const expenses = await response.json();
-        //     const tableBody = document.getElementById('expense-table-body');
-        //     tableBody.innerHTML = '';
-
-        //     let totalDebits = 0;
-
-        //     expenses.forEach(expense => {
-        //         const row = document.createElement('tr');
-        //         row.innerHTML =
-        //             `   
-        //             <td>${expense.expense_date}</td> <!-- Show date -->
-        //             <td>Rs.${expense.amount}</td>
-        //             <td>${expense.description}</td>
-        //             <td>${expense.category}</td>
-        //             <td><button onclick="deleteExpense(${expense.id})">Delete</button></td>
-        //         `;
-        //         tableBody.appendChild(row);
-
-        //         totalDebits += parseFloat(expense.amount);
-        //     });
-
-        //     document.getElementById('total-debits').innerText = `Total Debits: Rs.${totalDebits}`;
-        //     loadLeaderboard();
-        // }
-
         async function loadExpenses() {
             try {
                 const response = await fetch('/expense/list');
-                expenses = await response.json(); // ✅ Assign fetched data to global `expenses` array
-                renderTable(); // ✅ Now, `renderTable()` has data to work with
-                loadLeaderboard(); // ✅ Load leaderboard after loading expenses
+                expenses = await response.json();
+                renderTable(); 
+                loadLeaderboard();
             } catch (error) {
                 console.error("Error loading expenses:", error);
             }
@@ -247,6 +241,7 @@
                 const data = await response.json();
 
                 if (data.isPremiumUser) {
+                    document.getElementById('premiumDashboard').style.display = "block";
                     document.getElementById('premiumMessage').style.display = 'block';
                     document.getElementById('premium-btn').style.display = 'none';
                     document.getElementById('show-leaderboard-btn').style.display = 'block';
