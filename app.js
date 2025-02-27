@@ -1,3 +1,4 @@
+// const https = require('https');
 const express = require('express');
 const bodyParser = require('body-parser');
 const session = require('express-session');
@@ -5,12 +6,13 @@ const MySQLStore = require('express-mysql-session')(session);
 const fs = require('fs');
 const path = require('path');
 const morgan = require('morgan');
+
 require('dotenv').config();
 
 const sequelize = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
-const paymentRoutes = require('./routes/payment'); // Adjust path if needed
+const paymentRoutes = require('./routes/payment');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 const app = express();
@@ -24,6 +26,9 @@ const sessionStore = new MySQLStore({
   checkExpirationInterval: 900000, // 15 minutes
     expiration: 86400000 // 1-day session expiration
 });
+
+// const privateKey = fs.readFileSync('server.key');
+// const certificate = fs.readFileSync('server.cert');
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' });
 app.use(morgan('combined' , {stream : accessLogStream}));
 app.use(bodyParser.json());
@@ -66,6 +71,7 @@ app.get('/', (req, res) => {
 
 sequelize.sync()
   .then(() => {
+    // https.createServer({key: privateKey, cert : certificate}, app)
     app.listen(process.env.PORT || 3000, () => console.log('Server running on port 3000'));
     console.log('Database connected successfully');
   })
