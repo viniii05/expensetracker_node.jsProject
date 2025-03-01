@@ -1,6 +1,57 @@
 const sequelize = require('../config/database'); 
 const Expense = require('../models/Expense');
 const User = require('../models/User');
+const DownloadHistory = require('../models/DownloadHistory');  // Ensure this is imported
+require('dotenv').config();
+const S3service = require('../services/S3services');
+
+
+exports.getDownloadReport = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.session.userId, {
+            include: Expense,
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const expenses = user.Expenses;
+        const stringifiedExpenses = JSON.stringify(expenses);
+        const fileName = `expenses_${user.id}_${Date.now()}.txt`;
+
+        const fileURL = await S3service.uploadToS3(stringifiedExpenses, fileName);
+
+        await DownloadHistory.create({
+            user_id: user.id,  // ✅ Correct reference to user ID
+            fileURL
+        });
+        
+
+        res.status(200).json({ fileURL, success: true });
+    } catch (error) {
+        console.error('Error fetching download report:', error);
+        res.status(500).json({ message: 'Error fetching download report' });
+    }
+};
+
+exports.getDownloadHistory = async (req, res) => {
+    try {
+        const userId = req.session.userId;
+
+        const history = await DownloadHistory.findAll({
+            where: { user_id: userId },
+            order: [['downloadedAt', 'DESC']]
+        });
+
+        res.status(200).json(history);
+    } catch (error) {
+        console.error('Error fetching download history:', error);
+        res.status(500).json({ message: 'Error fetching download history' });
+    }
+};
+
+
 
 exports.addExpense = async (req, res) => {
     let trans; 

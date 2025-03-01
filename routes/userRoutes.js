@@ -1,5 +1,6 @@
 const express = require('express');
 const userController = require('../controllers/userController');
+const expenseController = require('../controllers/expenseController');
 const isAuthenticated = require('../middleware/authMiddleware');
 const User = require('../models/User');
 
@@ -17,6 +18,8 @@ router.get('/user/signup' , userController.getSignupForm);
 
 router.get('/password/reset', userController.getResetPassword);
 
+router.get('/user/premium' , userController.getPremiumActions);
+
 router.get('/check-premium', async (req, res) => {
     try {
         if (!req.session.userId) {
@@ -32,10 +35,9 @@ router.get('/check-premium', async (req, res) => {
     }
 });
 
+router.get('/download', expenseController.getDownloadReport);
 
-
-
-router.get('/password/reset-password/:id', userController.getResetPassword );
+router.get('/password/reset-password/:id', userController.getResetPasswordFromLink );
 
 router.post('/password/resetpassword/:id', userController.resetPassword);
 

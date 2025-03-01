@@ -17,6 +17,7 @@ exports.getSignupForm = (req, res) => {
 exports.getResetPassword = (req,res) => {
   res.sendFile(path.join(__dirname , '../views/resetPassword.html' ));
 }
+
 exports.signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -114,7 +115,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-exports.getResetPassword = async (req, res) => {
+exports.getResetPasswordFromLink = async (req, res) => {
   const { id } = req.params;
   try {
       const request = await ForgotPasswordRequest.findOne({ where: { id, isActive: true } });
