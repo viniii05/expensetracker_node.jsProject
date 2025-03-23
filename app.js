@@ -6,10 +6,11 @@ const MySQLStore = require('express-mysql-session')(session);
 const fs = require('fs');
 const path = require('path');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 
 require('dotenv').config();
 
-const sequelize = require('./config/database');
+const mongoConnect = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const paymentRoutes = require('./routes/payment');
@@ -69,12 +70,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'expense.html'));
 });
 
-sequelize.sync()
-  .then(() => {
-    // https.createServer({key: privateKey, cert : certificate}, app)
-    app.listen(process.env.PORT || 3000, () => console.log('Server running on port 3000'));
-    console.log('Database connected successfully');
-  })
-  .catch(err => console.error('Database connection error:', err));
-
-
+mongoConnect().then(() => {
+  app.listen(process.env.PORT || 3000, () => console.log('Server running on port 3000'));
+}).catch(err => console.error('Database connection error:', err));

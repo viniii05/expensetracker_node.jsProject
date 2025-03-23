@@ -1,9 +1,7 @@
-const express = require('express');
 const Order = require('../models/Order');
 const User = require('../models/User'); 
 require('dotenv').config();
-const path = require('path');
-const { createorder, getPaymentStatus } = require('../services/cashfreeService.js');
+const { createorder, getPaymentStatus } = require('../services/cashfreeService.js'); // ✅ Add getPaymentStatus
 
 exports.pay = async (req, res) => {
     try {
@@ -14,20 +12,16 @@ exports.pay = async (req, res) => {
         const orderId = `order_${Date.now()}`;
         const orderAmount = 100;
         const customerId = `customer_${req.session.userId}`;
-        const customerPhone = "9999999999"; 
 
-        const order = await Order.create({
+        const order = new Order({
             userId: req.session.userId,
             orderId,
             amount: orderAmount,
             status: "PENDING",
         });
 
-        const paymentSessionId = await createorder(orderId, orderAmount, "INR", customerId, customerPhone);
-
-        if (!paymentSessionId) {
-            return res.status(500).json({ error: "Failed to create payment session" });
-        }
+        await order.save();
+        const paymentSessionId = await createorder(orderId, orderAmount, "INR", customerId, "9999999999");
 
         res.json({ paymentSessionId });
     } catch (error) {
@@ -61,36 +55,28 @@ exports.createOrder = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
     try {
-        console.log("verifyPayment function is running..."); // ✅ Add this
         const { orderId } = req.query;
-
-        if (!orderId) {
-            console.log("Order ID missing");
-            return res.status(400).json({ message: "Order ID is required" });
+        if (!req.session.userId) {
+            return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const paymentStatus = await getPaymentStatus(orderId);
-        console.log("Payment status:", paymentStatus); // ✅ Log payment status
+        const userId = req.session.userId;
+        
+        // Check payment status using your payment provider API
+        const paymentStatus = await getPaymentStatus(orderId); // ✅ Fix: Use getPaymentStatus
 
-        if (paymentStatus === "Success") {
-            const order = await Order.findOne({ where: { orderId } });
-            if (order) {
-                await order.update({ status: "SUCCESSFUL" });
-                await User.update({ isPremiumUser: true }, { where: { id: order.userId } });
-
-                req.session.isPremiumUser = true;
-                req.session.save();
-                console.log("User upgraded to premium");
-            }
-
-            return res.redirect("/"); 
+        if (paymentStatus === "SUCCESS") {
+            await User.findByIdAndUpdate(userId, { isPremiumUser: true }); // ✅ Fix Here
+            return res.status(200).json({ message: "Payment verified successfully" });
         } else {
-            return res.json({ message: "Payment failed", status: paymentStatus });
+            return res.status(400).json({ message: "Payment failed" });
         }
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error" });
+        console.error("Error fetching order status", error);
+        res.status(500).json({ message: "Error verifying payment" });
     }
 };
+
 
 exports.paymentStatus = async (req, res) => {
     const { orderId } = req.params;

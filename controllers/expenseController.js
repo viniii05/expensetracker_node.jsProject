@@ -4,7 +4,7 @@ const User = require('../models/User');
 const DownloadHistory = require('../models/DownloadHistory');  // Ensure this is imported
 require('dotenv').config();
 const S3service = require('../services/S3services');
-
+const mongoose = require('mongoose');
 
 exports.getDownloadReport = async (req, res) => {
     try {
@@ -35,101 +35,131 @@ exports.getDownloadReport = async (req, res) => {
     }
 };
 
+exports.getDownloadReport = async (req, res) => {
+    try {
+        const user = await User.findById(req.session.userId).populate('expenses');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const stringifiedExpenses = JSON.stringify(user.expenses);
+        const fileName = `expenses_${user._id}_${Date.now()}.txt`;
+        const fileURL = await S3service.uploadToS3(stringifiedExpenses, fileName);
+
+        await new DownloadHistory({ userId: user._id, fileURL }).save();
+
+        res.status(200).json({ fileURL, success: true });
+    } catch (error) {
+        console.error('Error fetching download report:', error);
+        res.status(500).json({ message: 'Error fetching download report' });
+    }
+};
+
 exports.getDownloadHistory = async (req, res) => {
     try {
-        const userId = req.session.userId;
-
-        const history = await DownloadHistory.findAll({
-            where: { user_id: userId },
-            order: [['downloadedAt', 'DESC']]
-        });
-
+        const history = await DownloadHistory.find({ userId: req.session.userId }).sort({ downloadedAt: -1 });
         res.status(200).json(history);
     } catch (error) {
-        console.error('Error fetching download history:', error);
         res.status(500).json({ message: 'Error fetching download history' });
     }
 };
 
-
-
 exports.addExpense = async (req, res) => {
-    let trans; 
     try {
-        const { amount, description, category , expense_date } = req.body;
-        const userId = req.session.userId;
+        if (!req.session.userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
 
-        trans = await sequelize.transaction();
+        const { amount, description, category, expense_date } = req.body;
 
-        await Expense.create({
-            amount,
+        // Check if required fields are provided
+        if (!amount || !description || !category) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        // Convert `userId` to ObjectId
+        const userId = new mongoose.Types.ObjectId(req.session.userId);
+
+        const expense = new Expense({
+            amount: parseFloat(amount),
             description,
             category,
-            expense_date: expense_date || new Date(),
-            user_id: userId
-        }, { transaction: trans });
-
-        await User.increment('totalExpenses', { 
-            by: parseFloat(amount), 
-            where: { id: userId }, 
-            transaction: trans
+            expense_date: expense_date ? new Date(expense_date) : new Date(),
+            userId
         });
 
-        await trans.commit();
-        res.status(201).json({ message: 'Expense added successfully' });
+        await expense.save();
+
+        // Update user's total expenses
+        await User.findByIdAndUpdate(userId, { $inc: { totalExpenses: parseFloat(amount) } });
+
+        res.status(201).json({ message: 'Expense added successfully', expense });
     } catch (error) {
-        if (trans) await trans.rollback();
         console.error('Error adding expense:', error);
-        res.status(500).json({ message: 'Error adding expense' });
+        res.status(500).json({ message: 'Error adding expense', error: error.message });
     }
 };
 
 exports.getExpenses = async (req, res) => {
     try {
-        const expenses = await Expense.findAll({
-            where: { user_id: req.session.userId },
-            order: [['id', 'DESC']]
-        });
+        if (!req.session.userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
 
-        res.json(expenses);
+        console.log("Session userId:", req.session.userId); // ✅ Debugging log
+
+        let userId;
+        if (typeof req.session.userId === "string" && mongoose.isValidObjectId(req.session.userId)) {
+            userId = new mongoose.Types.ObjectId(req.session.userId); // ✅ Convert to ObjectId
+        } else {
+            console.error("Invalid userId format:", req.session.userId);
+            return res.status(400).json({ message: "Invalid userId format" });
+        }
+
+        const expenses = await Expense.find({ userId }).sort({ createdAt: -1 });
+
+        console.log("Expenses fetched:", expenses.length); // ✅ Debugging log
+
+        // ✅ Ensure `expense_date` is included in the response
+        const formattedExpenses = expenses.map(exp => ({
+            id: exp._id.toString(),
+            userId: exp.userId.toString(),
+            amount: exp.amount,
+            description: exp.description,
+            category: exp.category,
+            expense_date: exp.expense_date ? exp.expense_date.toISOString().split('T')[0] : exp.createdAt.toISOString().split('T')[0], // ✅ Use `expense_date` or fallback to `createdAt`
+            createdAt: exp.createdAt,
+            updatedAt: exp.updatedAt
+        }));
+
+        res.json(formattedExpenses);
     } catch (error) {
-        console.error('Error fetching expenses:', error);
-        res.status(500).json({ message: 'Error fetching expenses' });
+        console.error("Error fetching expenses:", error);
+        res.status(500).json({ message: "Error fetching expenses", error: error.message });
     }
 };
 
 exports.deleteExpense = async (req, res) => {
-    let trans;
     try {
         const { id } = req.params;
-        const userId = req.session.userId;
+        if (!req.session.userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
 
-        trans = await sequelize.transaction();
+        const userId = new mongoose.Types.ObjectId(req.session.userId); // ✅ Convert to ObjectId
 
-        const expense = await Expense.findOne({ 
-            where: { id, user_id: userId },
-            transaction: trans 
-        });
+        const expense = await Expense.findOneAndDelete({ _id: id, userId }); // ✅ Mongoose Query
 
         if (!expense) {
-            await trans.rollback();
             return res.status(404).json({ message: 'Expense not found' });
         }
 
-        await User.increment('totalExpenses', { 
-            by: -parseFloat(expense.amount),
-            where: { id: userId },
-            transaction: trans 
-        });
+        await User.findByIdAndUpdate(userId, { $inc: { totalExpenses: -parseFloat(expense.amount) } }); // ✅ Update User's totalExpenses
 
-        await expense.destroy({ transaction: trans });
-
-        await trans.commit(); 
         res.json({ message: 'Expense deleted successfully' });
     } catch (error) {
-        if (trans) await trans.rollback();
         console.error('Error deleting expense:', error);
-        res.status(500).json({ message: 'Error deleting expense' });
+        res.status(500).json({ message: 'Error deleting expense', error: error.message });
     }
 };
-

@@ -1,29 +1,10 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Order = sequelize.define('Order', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
-    },
-    userId: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    orderId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true 
-    },
-    amount: {
-        type: DataTypes.FLOAT,
-        allowNull: false
-    },
-    status: {
-        type: DataTypes.ENUM('PENDING', 'SUCCESSFUL', 'FAILED'),
-        defaultValue: 'PENDING'
-    }
-}, { timestamps: false }); 
+const orderSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    orderId: { type: String, required: true, unique: true },
+    amount: { type: Number, required: true },
+    status: { type: String, enum: ['PENDING', 'SUCCESSFUL', 'FAILED'], default: 'PENDING' }
+}, { timestamps: true });
 
-module.exports = Order;
+module.exports = mongoose.model('Order', orderSchema);

@@ -45,7 +45,7 @@
     </div>
 
     <h2>Expense List</h2>
-    
+
     <div class="items-per-page-container">
         <label for="items-per-page">Expenses per page:</label>
         <select id="items-per-page">
@@ -56,7 +56,7 @@
             <option value="40">40</option>
         </select>
     </div>
-    
+
 
     <table>
         <thead>
@@ -84,7 +84,7 @@
         let expenses = [];
         let currentPage = 1;
         let itemsPerPage = localStorage.getItem('itemsPerPage') ? parseInt(localStorage.getItem('itemsPerPage')) : 10;
-        
+
         document.getElementById('items-per-page').value = itemsPerPage;
         document.getElementById('items-per-page').addEventListener('change', function () {
             itemsPerPage = parseInt(this.value);
@@ -116,42 +116,52 @@
         async function loadExpenses() {
             try {
                 const response = await fetch('/expense/list');
-                expenses = await response.json();
-                renderTable(); 
-                loadLeaderboard();
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Expense API Response:", data); // ✅ Debugging log
+
+                if (!Array.isArray(data)) {
+                    throw new Error("Invalid data format. Expected an array.");
+                }
+
+                expenses = data;
+                renderTable();
             } catch (error) {
                 console.error("Error loading expenses:", error);
             }
         }
+
         function renderTable() {
-            const tableBody = document.getElementById('expense-table-body');
-            tableBody.innerHTML = '';
+    const tableBody = document.getElementById('expense-table-body');
+    tableBody.innerHTML = '';
 
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paginatedItems = expenses.slice(start, end);
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const paginatedItems = expenses.slice(start, end);
 
-            let totalDebits = 0;
+    let totalDebits = 0;
 
-            paginatedItems.forEach(expense => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${expense.expense_date}</td>
-                    <td>Rs.${expense.amount}</td>
-                    <td>${expense.description}</td>
-                    <td>${expense.category}</td>
-                    <td><button onclick="deleteExpense(${expense.id})">Delete</button></td>
-                `;
-                tableBody.appendChild(row);
+    paginatedItems.forEach(expense => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+    <td>${expense.expense_date ? expense.expense_date : 'N/A'}</td>
+            <td>Rs.${expense.amount}</td>
+            <td>${expense.description}</td>
+            <td>${expense.category}</td>
+            <td><button onclick="deleteExpense('${expense.id}')">Delete</button></td>
+        `;
+        tableBody.appendChild(row);
 
-                totalDebits += parseFloat(expense.amount);
-            });
+        totalDebits += parseFloat(expense.amount);
+    });
 
-            document.getElementById('total-debits').innerText = `Total Debits: Rs.${totalDebits}`;
-            document.getElementById('page-info').textContent = `Page ${currentPage} of ${Math.ceil(expenses.length / itemsPerPage)}`;
-            document.getElementById('prev-btn').disabled = currentPage === 1;
-            document.getElementById('next-btn').disabled = currentPage >= Math.ceil(expenses.length / itemsPerPage);
-        }
+    document.getElementById('total-debits').innerText = `Total Debits: Rs.${totalDebits}`;
+}
+
 
         document.getElementById('prev-btn').addEventListener('click', () => {
             if (currentPage > 1) {

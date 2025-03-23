@@ -1,41 +1,11 @@
-// models/User.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const Expense = require('./Expense');
+const mongoose = require('mongoose');
 
-const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    allowNull: false,
-    primaryKey: true
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  totalExpenses: {
-    type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0,
-  },
-  isPremiumUser: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  }
-}, {
-  timestamps: false
-});
+const userSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    totalExpenses: { type: Number, default: 0 },
+    isPremiumUser: { type: Boolean, default: false }
+}, { timestamps: true });
 
-User.hasMany(Expense, { foreignKey: 'user_id', onDelete: 'CASCADE' });
-Expense.belongsTo(User, { foreignKey: 'user_id' });
-
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);
