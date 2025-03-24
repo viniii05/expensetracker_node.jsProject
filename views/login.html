@@ -21,7 +21,7 @@
 
             <button type="submit" id="btn">Let’s Go!</button>
 
-            <!-- Forgot Password Link (Fixed Button Structure) -->
+            <!-- Forgot Password Link -->
             <a href="/password/reset" id="btn">Forgot Password?</a>
 
             <p class="span">First time here? <a href="/user/signup"> Sign up </a> and start tracking!</p>
@@ -47,7 +47,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    window.location.href = data.redirect; // Redirect user to "/"
+                    window.location.href = data.redirect;
                 } else {
                     document.getElementById('error-message').innerText = data.error || 'Something went wrong';
                 }

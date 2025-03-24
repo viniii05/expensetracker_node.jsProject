@@ -1,16 +1,13 @@
-// const https = require('https');
 const express = require('express');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const MySQLStore = require('express-mysql-session')(session);
+const MongoDBStore = require('connect-mongodb-session')(session);
 const fs = require('fs');
 const path = require('path');
 const morgan = require('morgan');
-const mongoose = require('mongoose');
-
 require('dotenv').config();
 
-const mongoConnect = require('./config/database');
+const mongoConnect = require('./config/database'); 
 const userRoutes = require('./routes/userRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const paymentRoutes = require('./routes/payment');
@@ -18,49 +15,46 @@ const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 const app = express();
 
-const sessionStore = new MySQLStore({
-  host: 'localhost',
-  user: 'root',
-  password: 'vini0520',
-  database: 'expense-tracker-nodejs',
-  clearExpired: true,
-  checkExpirationInterval: 900000, // 15 minutes
-    expiration: 86400000 // 1-day session expiration
+const sessionStore = new MongoDBStore({
+  uri: process.env.MONGO_URI,
+  collection: 'sessions',
 });
 
-// const privateKey = fs.readFileSync('server.key');
-// const certificate = fs.readFileSync('server.cert');
+sessionStore.on('error', (error) => {
+  console.error('Session Store Error:', error);
+});
+
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' });
-app.use(morgan('combined' , {stream : accessLogStream}));
+app.use(morgan('combined', { stream: accessLogStream }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
 app.use(express.static(path.join(__dirname, 'views')));
 
-app.use(session({
-    key: 'user_sid',
-    secret: 'your_secret_key',
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your_secret_key',
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        maxAge: 86400000,
-        httpOnly: true
-    }
-}));
+      maxAge: 86400000, // 1-day expiration
+      httpOnly: true,
+    },
+  })
+);
 
 app.use(userRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/expense', expenseRoutes);
 app.use(leaderboardRoutes);
 
-
 app.get('/check-session', (req, res) => {
-    if (req.session.userId) {
-        res.json({ loggedIn: true, user: req.session.userName });
-    } else {
-        res.json({ loggedIn: false });
-    }
+  if (req.session.userId) {
+    res.json({ loggedIn: true, user: req.session.userName });
+  } else {
+    res.json({ loggedIn: false });
+  }
 });
 
 app.get('/', (req, res) => {

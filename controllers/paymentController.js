@@ -1,7 +1,7 @@
 const Order = require('../models/Order');
 const User = require('../models/User'); 
 require('dotenv').config();
-const { createorder, getPaymentStatus } = require('../services/cashfreeService.js'); // ✅ Add getPaymentStatus
+const { createorder, getPaymentStatus } = require('../services/cashfreeService.js');
 
 exports.pay = async (req, res) => {
     try {
@@ -55,27 +55,33 @@ exports.createOrder = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
     try {
+        console.log("Received orderId:", req.query.orderId);  // Debugging line
+        
         const { orderId } = req.query;
+        if (!orderId) {
+            return res.status(400).json({ message: "Missing orderId" });
+        }
+
         if (!req.session.userId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
         const userId = req.session.userId;
         
-        // Check payment status using your payment provider API
-        const paymentStatus = await getPaymentStatus(orderId); // ✅ Fix: Use getPaymentStatus
+        const paymentStatus = await getPaymentStatus(orderId, userId);
 
-        if (paymentStatus === "SUCCESS") {
-            await User.findByIdAndUpdate(userId, { isPremiumUser: true }); // ✅ Fix Here
+        if (paymentStatus === "Success") {
+            await User.findByIdAndUpdate(userId, { isPremiumUser: true });
             return res.status(200).json({ message: "Payment verified successfully" });
         } else {
             return res.status(400).json({ message: "Payment failed" });
         }
     } catch (error) {
-        console.error("Error fetching order status", error);
+        console.error("Error verifying payment:", error);
         res.status(500).json({ message: "Error verifying payment" });
     }
 };
+
 
 
 exports.paymentStatus = async (req, res) => {

@@ -3,14 +3,14 @@ const userController = require('../controllers/userController');
 const expenseController = require('../controllers/expenseController');
 const isAuthenticated = require('../middleware/authMiddleware');
 const User = require('../models/User');
-const mongoose = require('mongoose'); // Add this at the top
+const mongoose = require('mongoose');
 
 const router = express.Router();
 
 router.post('/login', userController.login);
 router.post('/signup', userController.signup);
 router.post('/logout', userController.logout);
-// router.post('/password/forgotpassword', userController.forgotPassword);
+router.post('/password/forgotpassword', userController.forgotPassword);
 
 router.get('/user/login', userController.getLoginForm);
 router.get('/user/signup', userController.getSignupForm);
@@ -24,7 +24,7 @@ router.get('/check-premium', async (req, res) => {
             return res.json({ loggedIn: false });
         }
 
-        const userId = new mongoose.Types.ObjectId(req.session.userId); // ✅ Convert to ObjectId
+        const userId = new mongoose.Types.ObjectId(req.session.userId);
         const user = await User.findById(userId);
 
         res.json({ loggedIn: true, isPremiumUser: user ? user.isPremiumUser : false });

@@ -1,7 +1,5 @@
-import User from "../models/User.js"; // ✅ Correct for ESM
+import User from "../models/User.js";
 import { Cashfree } from "cashfree-pg";
-
-
 
 Cashfree.XClientId = process.env.CASHFREE_APP_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
@@ -43,7 +41,7 @@ export const getPaymentStatus = async (orderId, userId) => {
         if (getOrderResponse.some(transaction => transaction.payment_status === "SUCCESS")) {
             orderStatus = "Success";
 
-            await User.update({ isPremium: true }, { where: { id: userId } });
+            await User.findByIdAndUpdate(userId, { isPremium: true });
 
         } else if (getOrderResponse.some(transaction => transaction.payment_status === "PENDING")) {
             orderStatus = "Pending";

@@ -122,7 +122,7 @@
                 }
 
                 const data = await response.json();
-                console.log("Expense API Response:", data); // ✅ Debugging log
+                console.log("Expense API Response:", data); 
 
                 if (!Array.isArray(data)) {
                     throw new Error("Invalid data format. Expected an array.");
@@ -267,12 +267,12 @@
             const leaderboardList = document.getElementById('leaderboard-list');
 
             if (leaderboardList.style.display === 'none' || leaderboardList.style.display === '') {
-                await loadLeaderboard();  // Load leaderboard data
+                await loadLeaderboard(); 
                 leaderboardList.style.display = 'block';
-                this.textContent = "Hide Leaderboard"; // Change button text
+                this.textContent = "Hide Leaderboard"; 
             } else {
                 leaderboardList.style.display = 'none';
-                this.textContent = "Show Leaderboard"; // Reset button text
+                this.textContent = "Show Leaderboard";
             }
         });
 

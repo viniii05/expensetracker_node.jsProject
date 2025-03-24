@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid'); // Import UUID package
+const { v4: uuidv4 } = require('uuid');
 const ForgotPasswordRequest = require('../models/forgotPasswordRequest');
 
 const Sib = require('sib-api-v3-sdk');
@@ -57,7 +57,52 @@ exports.login = async (req, res) => {
       res.status(500).json({ error: 'Login failed' });
   }
 };
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const resetId = uuidv4();
+        await ForgotPasswordRequest.create({
+            id: resetId,
+            userId: user.id,
+            isActive: true
+        });
+
+        const resetLink = `http://localhost:3000/password/resetpassword/${resetId}`;
+        
+        console.log('Reset Link:', resetLink);
+
+    const client = Sib.ApiClient.instance;
+    client.authentications['api-key'].apiKey = process.env.SENDINBLUE_API_KEY;
+
+    const tranEmailApi = new Sib.TransactionalEmailsApi();
+
+    const sender = { email: 'vinivt.0520@gmail.com' };
+    const receivers = [{ email: user.email }];
+
+    await tranEmailApi.sendTransacEmail({
+      sender,
+      to: receivers,
+      subject: 'Reset Your Password',
+      textContent: `Click on the link to reset your password: http://localhost:3000/password/reset-password/${resetId}`
+    });
+
+    res.status(200).json({ message: "Password reset email sent successfully" });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    res.status(500).json({ message: "Failed to send password reset email" });
+  }
+};
 exports.getResetPasswordFromLink = async (req, res) => {
   const { id } = req.params;
   try {
@@ -100,16 +145,16 @@ exports.getPremiumActions = (req,res) => {
 
 
 exports.logout = async (req, res) => {
-  try {
-      req.session.destroy((err) => {
-          if (err) {
-              console.error("Logout failed:", err);
-              return res.status(500).json({ message: "Logout failed" });
-          }
-          res.status(200).json({ message: "Logged out successfully" });
-      });
-  } catch (error) {
-      console.error("Error during logout:", error);
-      res.status(500).json({ message: "Error during logout" });
-  }
+    try {
+        req.session.destroy((err) => {
+            if (err) {
+                console.error("Logout failed:", err);
+                return res.status(500).json({ message: "Logout failed" });
+            }
+            res.status(200).json({ message: "Logged out successfully" });
+        });
+    } catch (error) {
+        console.error("Error during logout:", error);
+        res.status(500).json({ message: "Error during logout" });
+    }
 };
